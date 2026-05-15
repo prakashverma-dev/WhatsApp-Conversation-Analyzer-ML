@@ -8,6 +8,7 @@ import pandas as pd
 from collections import Counter
 import emoji
 
+
 #Knowing user statistics logic function -
 def fetch_stats(selected_user, df):
 
@@ -177,3 +178,113 @@ def activity_heatmap(selected_user, df):
     user_heatmap = df.pivot_table(index='day_name',columns='period',values='message' , aggfunc='count').fillna(0)
 
     return user_heatmap
+
+
+# Sentiment Analysis -
+
+# ====================== SENTIMENT ANALYSIS ======================
+
+# analyzer = SentimentIntensityAnalyzer()
+
+# def compute_sentiment(df):
+#     """
+#     Compute sentiment using VADER + TextBlob ensemble and add columns to dataframe.
+#     Call this function once after preprocessing.
+#     """
+#     if 'Sentiment' in df.columns:
+#         return df  # Already computed
+
+#     sentiments = []
+#     scores = []
+
+#     for message in df['Message']:
+#         if not isinstance(message, str) or len(message.strip()) == 0:
+#             sentiments.append('Neutral')
+#             scores.append(0.0)
+#             continue
+
+#         # VADER Score
+#         vader_scores = analyzer.polarity_scores(message)
+#         compound = vader_scores['compound']
+
+#         # TextBlob Score (for ensemble)
+#         textblob_score = TextBlob(message).sentiment.polarity
+
+#         # Ensemble: Average both scores
+#         final_score = (compound + textblob_score) / 2
+
+#         if final_score >= 0.05:
+#             sentiments.append('Positive')
+#         elif final_score <= -0.05:
+#             sentiments.append('Negative')
+#         else:
+#             sentiments.append('Neutral')
+        
+#         scores.append(round(final_score, 4))
+
+#     df = df.copy()
+#     df['Sentiment'] = sentiments
+#     df['Sentiment_Score'] = scores
+
+#     return df
+
+def sentiment_analysis(selected_user, df):
+    """
+    Returns sentiment analysis results for selected user or overall.
+    """
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+
+    # Count of each sentiment
+    sentiment_counts = df['Sentiment'].value_counts()
+    
+    # Percentage distribution
+    sentiment_percent = round((df['Sentiment'].value_counts(normalize=True) * 100), 2)
+    
+    # Average sentiment score
+    avg_sentiment_score = round(df['Sentiment_Score'].mean(), 3) if 'Sentiment_Score' in df.columns else None
+
+    # Create result dictionary
+    result = {
+        'counts': sentiment_counts,
+        'percentage': sentiment_percent,
+        'avg_score': avg_sentiment_score,
+        'total_messages': len(df)
+    }
+    
+    return result
+
+
+def monthly_sentiment_trend(selected_user, df):
+    """
+    Returns monthly sentiment trend for line plot.
+    """
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+
+    # Group by month and sentiment
+    monthly_sentiment = df.groupby(['month', 'Sentiment']).size().unstack(fill_value=0)
+    
+    # Add total messages per month
+    monthly_sentiment['Total'] = monthly_sentiment.sum(axis=1)
+    
+    return monthly_sentiment
+
+
+def user_wise_sentiment(selected_user, df):
+    """
+    Returns sentiment distribution for each user (useful for group chats).
+    """
+    if selected_user != 'Overall':
+        df = df[df['user'] == selected_user]
+        return None  # Not meaningful for single user
+
+    user_sentiment = df.groupby('user')['Sentiment'].value_counts().unstack(fill_value=0)
+    user_sentiment['Total'] = user_sentiment.sum(axis=1)
+    
+    # Calculate percentage
+    for sentiment in ['Positive', 'Negative', 'Neutral']:
+        if sentiment in user_sentiment.columns:
+            user_sentiment[f'{sentiment}_%'] = round((user_sentiment[sentiment] / user_sentiment['Total']) * 100, 2)
+    
+    return user_sentiment

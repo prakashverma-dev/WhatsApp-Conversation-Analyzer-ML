@@ -5,3 +5,6 @@ seaborn
 pandas
 wordcloud
 emoji
+vaderSentiment
+textblob
+plotly

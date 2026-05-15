@@ -1,6 +1,8 @@
 
 import re
 import pandas as pd
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from textblob import TextBlob 
 
 
 # We put the data logic in preprocessor.py file which accept a data and return a clearn struture data frame of having - 
@@ -65,6 +67,46 @@ def preprocess(data):
             period.append(str(hour) + "-" + str(hour+1))
 
     df['period'] = period
+
+
+    # Sentiment Anlyasis -
+
+    analyzer = SentimentIntensityAnalyzer()
+
+    if 'Sentiment' in df.columns:
+        return df  # Already computed
+
+    sentiments = []
+    scores = []
+
+    for message in df['message']:
+        if not isinstance(message, str) or len(message.strip()) == 0:
+            sentiments.append('Neutral')
+            scores.append(0.0)
+            continue
+
+        # VADER Score
+        vader_scores = analyzer.polarity_scores(message)
+        compound = vader_scores['compound']
+
+        # TextBlob Score (for ensemble)
+        textblob_score = TextBlob(message).sentiment.polarity
+
+        # Ensemble: Average both scores
+        final_score = (compound + textblob_score) / 2
+
+        if final_score >= 0.05:
+            sentiments.append('Positive')
+        elif final_score <= -0.05:
+            sentiments.append('Negative')
+        else:
+            sentiments.append('Neutral')
+        
+        scores.append(round(final_score, 4))
+
+    df = df.copy()
+    df['Sentiment'] = sentiments
+    df['Sentiment_Score'] = scores
 
 
     return df

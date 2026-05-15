@@ -3,6 +3,7 @@ import preprocessor
 import helper
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
 
 # In this File, all the App Logic will be the there - center of Application
 # To Run : streamlit run app.py
@@ -158,3 +159,38 @@ if uploaded_file is not None:
             ax.pie(emoji_df[1].head(), labels=emoji_df[0].head(), autopct="%0.2f")
             st.pyplot(fig)
 
+
+        # ====================== SENTIMENT ANALYSIS ======================
+        st.title("😊 Sentiment Analysis")
+
+        sentiment_result = helper.sentiment_analysis(selected_user, df)
+
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Positive", f"{sentiment_result['percentage'].get('Positive', 0)}%")
+        with col2:
+            st.metric("Negative", f"{sentiment_result['percentage'].get('Negative', 0)}%")
+        with col3:
+            st.metric("Neutral",  f"{sentiment_result['percentage'].get('Neutral', 0)}%")
+        with col4:
+            st.metric("Avg Score", round(sentiment_result['avg_score'], 2))
+
+        # Sentiment Pie Chart (Using Plotly - Better than matplotlib)
+        fig = px.pie(
+            names=sentiment_result['percentage'].index,
+            values=sentiment_result['percentage'].values,
+            title="Overall Sentiment Distribution",
+            color_discrete_sequence=px.colors.sequential.RdBu
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Monthly Sentiment Trend
+        st.subheader("Monthly Sentiment Trend")
+        monthly_trend = helper.monthly_sentiment_trend(selected_user, df)
+        st.line_chart(monthly_trend)
+
+        # User-wise Sentiment (Only for Overall / Group Chat)
+        if selected_user == "Overall":
+            st.subheader("User-wise Sentiment Analysis")
+            user_sentiment = helper.user_wise_sentiment(selected_user, df)
+            st.dataframe(user_sentiment)
