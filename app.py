@@ -2,6 +2,10 @@ import streamlit as st
 import preprocessor
 import helper
 import matplotlib.pyplot as plt
+import seaborn as sns
+
+# In this File, all the App Logic will be the there - center of Application
+# To Run : streamlit run app.py
 
 st.sidebar.title("Whatsapp Chat Analyzer")
 
@@ -9,6 +13,7 @@ st.sidebar.title("Whatsapp Chat Analyzer")
 # st.write("This is a simple web application built with Python.")
  
 uploaded_file = st.sidebar.file_uploader("Choose Whatsapp Export File :")
+
 if uploaded_file is not None:
     bytes_data = uploaded_file.getvalue()
     data = bytes_data.decode("utf-8")
@@ -65,6 +70,44 @@ if uploaded_file is not None:
         plt.xticks(rotation = 'vertical')
         st.pyplot(fig)
 
+
+        # Activity map of week and Month -
+        st.title('Activity Map')
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.header("Most Busy Day")
+            busy_day = helper.week_activity_map(selected_user, df)
+            fig, ax = plt.subplots()
+            ax.bar(busy_day.index, busy_day.values)
+            # X-axis label
+            ax.set_xlabel("Days of Week")
+
+            # Y-axis label
+            ax.set_ylabel("Number of Messages")
+
+            # Optional chart title
+            ax.set_title("User Activity by Day")
+
+            plt.xticks(rotation='vertical')
+            st.pyplot(fig)
+        
+        with col2:
+            st.header("Most Busy Month")
+            busy_month = helper.month_activity_map(selected_user, df)
+            fig, ax = plt.subplots()
+            ax.bar(busy_month.index, busy_month.values, color ='orange')
+            plt.xticks(rotation='vertical')
+            st.pyplot(fig)
+            
+        # Activity heat_map-
+        st.title("Weekly Activity Map")
+        user_heatmap = helper.activity_heatmap(selected_user, df)
+        fig, ax = plt.subplots()
+        ax = sns.heatmap(user_heatmap)
+        st.pyplot(fig)
+
+
         # Finding the busiest users in the group(Group Level only)-
         if selected_user == "Overall":
             
@@ -114,3 +157,4 @@ if uploaded_file is not None:
             fig, ax = plt.subplots()
             ax.pie(emoji_df[1].head(), labels=emoji_df[0].head(), autopct="%0.2f")
             st.pyplot(fig)
+
